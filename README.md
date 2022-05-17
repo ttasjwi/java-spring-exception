@@ -74,6 +74,51 @@ WAS(snedError 호출 기록 확인) <- 필터 <- 서블릿 <- 인터셉터 <- �
 </details>
 
 ## 8.2 서블릿 예외처리 - 오류 화면 제공
+<details>
+<summary>접기/펼치기 버튼</summary>
+<div markdown="1">
+
+### 서블릿 오류 페이지 등록 
+```java
+@Component
+public class WebServerCustomizer implements WebServerFactoryCustomizer<ConfigurableWebServerFactory> {
+
+    @Override
+    public void customize(ConfigurableWebServerFactory factory) {
+        ErrorPage errorPage404 = new ErrorPage(HttpStatus.NOT_FOUND, "/error-page/404");
+        ErrorPage errorPage500 = new ErrorPage(HttpStatus.INTERNAL_SERVER_ERROR, "/error-page/500");
+        ErrorPage errorPageRunTimeEx = new ErrorPage(RuntimeException.class, "/error-page/500");
+
+        factory.addErrorPages(errorPage404, errorPage500, errorPageRunTimeEx);
+    }
+}
+```
+- 특정 상태코드의 예외페이지 등록
+- 특정 예외 및 그 하위 타입의 예외페이지 등록
+
+### 오류를 처리할 컨트롤러 등록
+```java
+@Slf4j
+@Controller
+public class ErrorPageController {
+
+    @RequestMapping("/error-page/404")
+    public String errorPage404(HttpServletRequest request, HttpServletResponse response) {
+        log.info("errorPage 404");
+        return "error-page/404";
+    }
+
+    @RequestMapping("/error-page/500")
+    public String errorPage500(HttpServletRequest request, HttpServletResponse response) {
+        log.info("errorPage 500");
+        return "error-page/500";
+    }
+}
+```
+- 오류가 발생했을 때 처리할 컨트롤러 및 화면이 필요함
+
+</div>
+</details>
 
 ## 8.3 서블릿 예외처리 - 오류 페이지 작동 원리
 
