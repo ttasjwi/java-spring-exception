@@ -265,6 +265,52 @@ java.lang.RuntimeException: 예외 발생!
 
 ## 8.5 서블릿 예외처리 - 인터셉터
 
+### 8.5.1 인터셉터에서의 중복호출 제거
+```java
+@Configuration
+public class WebConfig implements WebMvcConfigurer {
+
+    @Override
+    public void addInterceptors(InterceptorRegistry registry) {
+        registry.addInterceptor(new LogInterceptor())
+                .order(1)
+                .addPathPatterns("/**")
+                .excludePathPatterns(
+                        "/css/**", "/*.ico",
+                        "/error", "/error-page/**" // 에러 페이지 경로
+                );
+    }
+}
+```
+- 인터셉터는 특정 DispatcherType에 대한 필터링 기능을 제공하지 않음
+- 대신, 적용하지 않을 url 조건을 추가하여 에러페이지로의 내부 재요청에 대해서는 인터셉터를 적용하지 않는 식으로 처리 가능
+
+### 8.5.2 정상 호출 및 오류발생 시 오류 페이지 요청 흐름
+#### 정상호출 
+```
+WAS -> 필터 -> 서블릿 -> 인터셉터 -> 컨트롤러 -> View
+```
+#### 오류 발생, 내부 재요청의 흐름
+```
+WAS(전파) <-필터 <- 서블릿 <- 인터셉터 <- 컨트롤러
+WAS -> 필터 -> 서블릿 -> 인터셉터(x) -> 컨트롤러 -> View
+```
+1. 요청, 컨트롤러에서 예외 발생
+   - WAS -> 필터 -> 서블릿 -> 인터셉터 -> 컨트롤러(예외 발생)
+
+2. 예외 전파
+   - WAS(전파) <-필터 <- 서블릿 <- 인터셉터 <- 컨트롤러
+
+3. 내부 재요청
+   - WAS : 오류 확인, 에러페이지 내부 재요청
+
+4. 필터/인터셉터에서 중복 호출 제거, View 반환
+   - 필터 : DispatcherType으로 중복 요청 제거
+   - 인터셉터 : 오류페이지 url을 제외하여 인터셉터 적용 
+     - WAS -> 필터 -> 서블릿 -> 인터셉터(x) -> 컨트롤러 -> View
+
+---
+
 ## 8.6 스프링 부트 - 오류 페이지1
 
 ## 8.7 스프링 부트 - 오류 페이지2
