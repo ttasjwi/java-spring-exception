@@ -126,7 +126,6 @@ public class ErrorPageController {
 <summary>접기/펼치기 버튼</summary>
 <div markdown="1">
 
-
 ### 8.3.1 예외 발생 흐름
 
 서블릿은 다음 상황일 때 설정된 오류 페이지를 찾는다.
@@ -168,6 +167,101 @@ WAS("/error-page/500" 내부 재요청) -> 필터 -> 서블릿 -> 인터셉터 -
 </details>
 
 ## 8.4 서블릿 예외처리 - 필터
+<details>
+<summary>접기/펼치기 버튼</summary>
+<div markdown="1">
+
+### 8.4.1 DispatcherType
+```java
+public enum DispatcherType {
+    FORWARD,
+    INCLUDE,
+    REQUEST,
+    ASYNC,
+    ERROR
+}
+```
+- 예외가 발생하거나 sendError되면 다시 예외페이지로 필터-서블릿-인터셉터-컨트롤러로 재요청 발생
+- 근데 로그인 같은 로직을 다시 필터를 적용하긴 배우 불필요함
+- 이런 것들을 구분하기 위해서 서블릿에서는 DispatcherType을 정의함
+  - REQUEST : 클라이언트 요청
+  - ERROR : 오류 요청
+  - FORWARD : 서블릿에서 다른 서블릿이나 JSP를 호출할 때
+    - `requestDispatcher.forward(request, response)`
+  - INCLUDE : 서블릿에서 다른 서블릿이나 JSP 결과 포함
+    - `requestDispatcher.include(request, response)`
+  - ASYNC : 서블릿 비동기 호출
+
+### 8.4.2 DispatcherType과 필터
+```java
+    @Override
+    public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException, ServletException {
+        HttpServletRequest httpRequest = (HttpServletRequest) request;
+        String requestURI = httpRequest.getRequestURI();
+
+        String uuid = UUID.randomUUID().toString();
+
+        try {
+            log.info("REQUEST [{}][{}][{}]", uuid, request.getDispatcherType(), requestURI);
+            chain.doFilter(request, response);
+        } catch (Exception e) {
+            log.info("exception! {}", e.getMessage());
+            throw e;
+        } finally {
+            log.info("RESPONSE [{}][{}][{}]", uuid, request.getDispatcherType(), requestURI);
+        }
+    }
+```
+```java
+
+@Configuration
+public class WebConfig implements WebMvcConfigurer {
+
+    @Bean
+    public FilterRegistrationBean logFilter() {
+        FilterRegistrationBean<Filter> filterFilterRegistrationBean = new FilterRegistrationBean<>();
+        filterFilterRegistrationBean.setFilter(new LogFilter());
+        filterFilterRegistrationBean.setOrder(1);
+        filterFilterRegistrationBean.addUrlPatterns("/*");
+        filterFilterRegistrationBean.setDispatcherTypes(DispatcherType.REQUEST, DispatcherType.ERROR);
+        return filterFilterRegistrationBean;
+    }
+}
+
+```
+- FilterRegistrationBean에 setDispatcherTypes(...)에 필터링을 적용하고 싶은 DispatcherType을 지정할 수 있음
+  - 기본값 : `DispatcherType.REQUEST` 만
+    - 기본값이 REQUEST로 되어있기 때문에, 재요청 시 다시 필터를 거치지 않음
+  - 만약 Request, Error만 적용하고 싶으면 REQUEST, ERROR을 지정
+```
+2022-05-18 17:48:49.323  INFO 4912 --- [nio-8080-exec-6] hello.exception.filter.LogFilter         : REQUEST [17b39eb2-4b68-404c-98f3-05d884daee42][REQUEST][/error-ex]
+2022-05-18 17:48:49.324  INFO 4912 --- [nio-8080-exec-6] hello.exception.filter.LogFilter         : exception! Request processing failed; nested exception is java.lang.RuntimeException: 예외 발생!
+2022-05-18 17:48:49.324  INFO 4912 --- [nio-8080-exec-6] hello.exception.filter.LogFilter         : RESPONSE [17b39eb2-4b68-404c-98f3-05d884daee42][REQUEST][/error-ex]
+2022-05-18 17:48:49.324 ERROR 4912 --- [nio-8080-exec-6] o.a.c.c.C.[.[.[/].[dispatcherServlet]    : Servlet.service() for servlet [dispatcherServlet] in context with path [] threw exception [Request processing failed; nested exception is java.lang.RuntimeException: 예외 발생!] with root cause
+
+java.lang.RuntimeException: 예외 발생!
+// 중략
+
+// 재요청
+2022-05-18 17:48:49.325  INFO 4912 --- [nio-8080-exec-6] hello.exception.filter.LogFilter         : REQUEST [407961e5-1b01-4b54-93fa-24dd336f79dc][ERROR][/error-page/500]
+2022-05-18 17:48:49.326  INFO 4912 --- [nio-8080-exec-6] h.exception.servlet.ErrorPageController  : errorPage 500
+2022-05-18 17:48:49.327  INFO 4912 --- [nio-8080-exec-6] h.exception.servlet.ErrorPageController  : ERROR_EXCEPTION: ex=
+
+java.lang.RuntimeException: 예외 발생!
+// 중략
+
+2022-05-18 17:48:49.327  INFO 4912 --- [nio-8080-exec-6] h.exception.servlet.ErrorPageController  : ERROR_EXCEPTION_TYPE: class java.lang.RuntimeException
+2022-05-18 17:48:49.327  INFO 4912 --- [nio-8080-exec-6] h.exception.servlet.ErrorPageController  : ERROR_MESSAGE: Request processing failed; nested exception is java.lang.RuntimeException: 예외 발생!
+2022-05-18 17:48:49.327  INFO 4912 --- [nio-8080-exec-6] h.exception.servlet.ErrorPageController  : ERROR_REQUEST_URI: /error-ex
+2022-05-18 17:48:49.327  INFO 4912 --- [nio-8080-exec-6] h.exception.servlet.ErrorPageController  : ERROR_SERVLET_NAME: dispatcherServlet
+2022-05-18 17:48:49.327  INFO 4912 --- [nio-8080-exec-6] h.exception.servlet.ErrorPageController  : ERROR_STATUS_CODE: 500
+2022-05-18 17:48:49.327  INFO 4912 --- [nio-8080-exec-6] h.exception.servlet.ErrorPageController  : dispatcherType = ERROR
+2022-05-18 17:48:49.329  INFO 4912 --- [nio-8080-exec-6] hello.exception.filter.LogFilter         : RESPONSE [407961e5-1b01-4b54-93fa-24dd336f79dc][ERROR][/error-page/500]
+```
+- 실제로 setDispatcherType로 REQUEST, ERROR를 등록해두면 오류로 인한 재요청 시에도 다시 필터를 거치게 됨
+
+</div>
+</details>
 
 ## 8.5 서블릿 예외처리 - 인터셉터
 

@@ -34,7 +34,7 @@ public class ErrorPageController {
     }
 
     private void printErrorInfo(HttpServletRequest request) {
-        log.info("ERROR_EXCEPTION: ex = {}",request.getAttribute(ERROR_EXCEPTION));
+        log.info("ERROR_EXCEPTION: ex=",request.getAttribute(ERROR_EXCEPTION));
         log.info("ERROR_EXCEPTION_TYPE: {}",request.getAttribute(ERROR_EXCEPTION_TYPE));
         log.info("ERROR_MESSAGE: {}",request.getAttribute(ERROR_MESSAGE));
         log.info("ERROR_REQUEST_URI: {}",request.getAttribute(ERROR_REQUEST_URI));
