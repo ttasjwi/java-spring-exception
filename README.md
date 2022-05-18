@@ -122,6 +122,51 @@ public class ErrorPageController {
 
 ## 8.3 서블릿 예외처리 - 오류 페이지 작동 원리
 
+<details>
+<summary>접기/펼치기 버튼</summary>
+<div markdown="1">
+
+
+### 8.3.1 예외 발생 흐름
+
+서블릿은 다음 상황일 때 설정된 오류 페이지를 찾는다.
+   - 발생된 Exception이 서블릿 밖으로 전파 될 때
+   - 또는 sendError가 호출되었을 때
+
+#### 예외 전파
+```
+WAS(여기까지 전파) <- 필터 <- 서블릿 <- 인터셉터 <- 컨트롤러(예외 발생)
+```
+#### sendError 감지
+```
+WAS(sendError 호출 기록 확인) <- 필터 <- 서블릿 <- 인터셉터 <- 컨트롤러(sendError)
+```
+
+### 8.3.2 오류페이지 확인 및 내부 재요청
+- 서블릿은 예외를 감지하면 해당 예외를 처리하는 오류 페이지 정보를 확인한다. 
+- 오류페이지를 출력하기 위해 지정된 페이지를 다시 요청한다.
+  - 오류 페이지 경로로 요청하기까지, 필터, 서블릿, 인터셉터, 컨트롤러를 다시 호출됨
+
+#### 오류 페이지 요청 흐름
+```
+WAS("/error-page/500" 내부 재요청) -> 필터 -> 서블릿 -> 인터셉터 -> 컨트롤러("/error-page/500/") -> View
+```
+
+### 8.3.3 오류 정보 추가
+- WAS는 오류 페이지를 다시 요청하는 것만 하는 것이 아니라, 오류 정보를 request의 attribute에 추가해서 넘겨줌
+- 오류페이지에서 전달된 오류 정보를 사용할 수 있다.
+
+#### request.attribute에 서버가 담아준 정보
+- `javax.servlet.error.exception` : 예외
+- `javax.servlet.error.exception_type` : 예외 타입
+- `javax.servlet.error.message` : 오류 메시지
+- `javax.servlet.error.request_uri` : 클라이언트 요청 URI
+- `javax.servlet.error.servlet_name` : 오류가 발생한 서블릿 이름
+- `javax.servlet.error.status_code` : HTTP 상태 코드
+
+</div>
+</details>
+
 ## 8.4 서블릿 예외처리 - 필터
 
 ## 8.5 서블릿 예외처리 - 인터셉터
