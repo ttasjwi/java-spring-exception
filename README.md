@@ -420,7 +420,41 @@ server.error.path=/error
 
 # Section 9. API 예외처리
 
-## 9.1 스프링 부트 기본 오류 처리
+## 9.1 서블릿 오류 페이지 방식으로 API 예외처리
+<details>
+<summary>접기/펼치기 버튼</summary>
+<div markdown="1">
+
+```java
+@RequestMapping(value = "/error-page/500", produces = MediaType.APPLICATION_JSON_VALUE)
+public ResponseEntity<Map<String, Object>> errorPage500Api
+        (HttpServletRequest request, HttpServletResponse response) {
+    log.info("API errorPage 500");
+
+    Map<String, Object> result = new HashMap<>();
+    Exception ex = (Exception) request.getAttribute(ERROR_EXCEPTION);
+    result.put("status", request.getAttribute(ERROR_STATUS_CODE));
+    result.put("message", ex.getMessage());
+
+    Integer statusCode = (Integer) request.getAttribute(ERROR_STATUS_CODE);
+    return new ResponseEntity<>(result, HttpStatus.valueOf(statusCode));
+}
+```
+```json
+{
+    "message": "잘못된 사용자",
+    "status": 500
+}
+```
+- 예외가 발생하면 WAS까지 전파되고, WAS는 내부적으로 예외 페이지로 재요청
+- Accept가 `application/json`인 경우에 한하여 json으로 응답하도록 하기
+  - Accept가 `*/*`인 경우 에러페이지로 등록한 html이 응답됨.
+- ResponseEntity에 전달할 예외 api를 담아 반환.
+  - 넘겨줄 Http Body 데이터
+  - 넘겨줄 상태코드
+
+</div>
+</details>
 
 ## 9.2 HandlerExceptionResolver 시작
 
