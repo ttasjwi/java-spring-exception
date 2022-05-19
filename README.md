@@ -456,16 +456,60 @@ public ResponseEntity<Map<String, Object>> errorPage500Api
 </div>
 </details>
 
-## 9.2 HandlerExceptionResolver 시작
+## 9.2 스프링 부트가 지원하는 기본 API 오류 처리
+<details>
+<summary>접기/펼치기 버튼</summary>
+<div markdown="1">
 
-## 9.3 HandlerExceptionResolver 활용
+### BasicErrorController
+```java
+@Controller
+@RequestMapping("${server.error.path:${error.path:/error}}")
+public class BasicErrorController extends AbstractErrorController {
 
-## 9.4 스프링이 제공하는 HandlerExceptionResolver1
+    @RequestMapping(produces = MediaType.TEXT_HTML_VALUE)
+    public ModelAndView errorHtml(HttpServletRequest request, HttpServletResponse response) {
+        // 생략
+    }
 
-## 9.5 스프링이 제공하는 HandlerExceptionResolver2
+    @RequestMapping
+    public ResponseEntity<Map<String, Object>> error(HttpServletRequest request) {
+        // 생략
+    }
+}    
+```
+- 클라이언트의 요청 Accept 헤더값이
+  - text/html일 경우 `errorHtml()`을 호출해서 view 제공
+  - 그 외의 경우, ResponseEntity에 예외 정보 및 상태코드를 담아 JSON 데이터 반환
 
-## 9.6 @ExceptionHandler
+### 스프링부트의 예외처리
+- 오류 발생시 `/error`를 오류 페이지로 요청
+- BasicErrorController는 이 경로를 기본으로 받음.
+  - server.error.path 값을 수정할 수 있음
+- 전달할 예외정보를 properties의 값 수정으로 변경할 수 있음. 하지만 보안상 위험할 수 있으니 간결한 메시지만 노출하는게 좋음
+  - server.error.include-exception=false
+  - server.error.include-message=never
+  - server.error.include-stacktrace=never
+  - server.error.include-binding-errors=never
 
-## 9.7 @ControllerAdvice
+### HTML 페이지 vs API 오류
+- BasicErrorController의 확장을 통해 JSON 메시지를 변경하는 것도 가능하긴 함.
+  - 문제점 : 각 API마다, 컨트롤러마다 제각각 다른 응답 결과를 표현하기 힘듬
+- API 통신에 있어서, 세밀하게 응답을 다르게하기 위해서는 `@ExceptionHandler`를 사용하는 것이 낫다.
+
+</div>
+</details>
+
+## 9.3 HandlerExceptionResolver 시작
+
+## 9.4 HandlerExceptionResolver 활용
+
+## 9.5 스프링이 제공하는 HandlerExceptionResolver1
+
+## 9.6 스프링이 제공하는 HandlerExceptionResolver2
+
+## 9.7 @ExceptionHandler
+
+## 9.8 @ControllerAdvice
 
 ---
