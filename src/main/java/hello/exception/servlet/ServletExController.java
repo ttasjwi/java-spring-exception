@@ -1,15 +1,13 @@
 package hello.exception.servlet;
 
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 
-import static javax.servlet.http.HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
-import static javax.servlet.http.HttpServletResponse.SC_NOT_FOUND;
+import static javax.servlet.http.HttpServletResponse.*;
 
 @Slf4j
 @Controller
@@ -18,6 +16,11 @@ public class ServletExController {
     @GetMapping("/error-ex")
     public void errorEx() {
         throw new RuntimeException("예외 발생!");
+    }
+
+    @GetMapping("/error-400")
+    public void error400(HttpServletResponse response) throws IOException {
+        response.sendError(SC_BAD_REQUEST, "400 오류~~~");
     }
 
     @GetMapping("/error-404")

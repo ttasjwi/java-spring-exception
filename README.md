@@ -264,6 +264,9 @@ java.lang.RuntimeException: 예외 발생!
 </details>
 
 ## 8.5 서블릿 예외처리 - 인터셉터
+<details>
+<summary>접기/펼치기 버튼</summary>
+<div markdown="1">
 
 ### 8.5.1 인터셉터에서의 중복호출 제거
 ```java
@@ -309,9 +312,47 @@ WAS -> 필터 -> 서블릿 -> 인터셉터(x) -> 컨트롤러 -> View
    - 인터셉터 : 오류페이지 url을 제외하여 인터셉터 적용 
      - WAS -> 필터 -> 서블릿 -> 인터셉터(x) -> 컨트롤러 -> View
 
----
+</div>
+</details>
 
 ## 8.6 스프링 부트 - 오류 페이지1
+
+### 8.6.1 기존 예외 처리 페이지 등록 방식
+- WebServerCustomizer 생성, 예외 종류에 따라서 ErrorPage 등록
+- 예외처리용 컨트롤러 ErrorPageController를 생성
+
+### 8.6.2 스프링 부트에서 지원하는 예외 처리 페이지 추가 기능
+- ErrorPage 자동 등록 : `/error`로 기본 오류 페이지 설정
+  - `new ErrorPage("/error")`,  상태코드와 예외를 설정하지 않으면 기본 오류 페이지를 설정
+  - 서블릿 밖으로 예외가 발생하거나, `response.sendError`가 호출되면 모든 오류는 `/error`를 호출
+  - 참고) `ErrorMvcAutoConfiguration`이라는 클래스가 오류 페이지를 자동으로 등록
+- `BasicErrorController`라는 스프링 컨트롤러를 자동으로 등록
+  - ErrorPage에서 등록한 `/error`를 매핑해서 처리하는 컨트롤러
+- 별다른 오류 페이지를 등록하지 않았다면, 스프링은 기본적으로 오류 페이지로 `/error`을 호출한다.
+
+### 8.6.3 개발자는 오류 페이지만 등록
+- BasicErrorController는 기본적인 로직이 모두 개발되어 있다.
+- 오류 페이지 화면만 `BasicErrorController`가 제공하는 룰과 우선순위에 따라 등록하면 됨.
+- 정적 HTML이면 정적 리소스(`/static/error/...`)에, 동적 HTML이면 (`/templates/error/...`)에 오류 페이지 파일을 넣어두기
+
+### 8.6.4 뷰 선택 우선순위
+해당 경로 위치에 HTTP 상태 코드 이름의 뷰 파일을 넣어서 처리하면 됨. (예외는 500으로 처리된다.) 우선순위는 다음과 같으며, 5xx보다는 500과 같은 구체적인 것이 덜 구체적인 것보다 우선순위가 높다.
+
+1. 뷰 템플릿
+   - `resources/templates/error/500.html`
+   - `resources/templates/error/5xx.html`
+   - ...
+
+2. 정적 리소스(static, public)
+   - `resources/static/error/400.html`
+   - `resources/static/error/404.html`
+   - `resources/static/error/4xx.html`
+   - ...
+
+3. 적용 대상이 없을 때 뷰 이름(error)
+   - `resources/templates/error.html`
+
+---
 
 ## 8.7 스프링 부트 - 오류 페이지2
 
