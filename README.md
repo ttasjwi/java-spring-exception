@@ -316,6 +316,9 @@ WAS -> 필터 -> 서블릿 -> 인터셉터(x) -> 컨트롤러 -> View
 </details>
 
 ## 8.6 스프링 부트 - 오류 페이지1
+<details>
+<summary>접기/펼치기 버튼</summary>
+<div markdown="1">
 
 ### 8.6.1 기존 예외 처리 페이지 등록 방식
 - WebServerCustomizer 생성, 예외 종류에 따라서 ErrorPage 등록
@@ -352,9 +355,66 @@ WAS -> 필터 -> 서블릿 -> 인터셉터(x) -> 컨트롤러 -> View
 3. 적용 대상이 없을 때 뷰 이름(error)
    - `resources/templates/error.html`
 
----
+</div>
+</details>
 
 ## 8.7 스프링 부트 - 오류 페이지2
+<details>
+<summary>접기/펼치기 버튼</summary>
+<div markdown="1">
+
+### 8.7.1 BasicErrorController가 제공하는 기본 정보들
+```
+* timestamp: Fri Feb 05 00:00:00 KST 2021
+* status: 400
+* error: Bad Request
+* exception: org.springframework.validation.BindException
+* trace: 예외 trace
+* message: Validation failed for object='data'. Error count: 1
+* errors: Errors(BindingResult)
+* path: 클라이언트 요청 경로 (`/hello`)
+```
+- BasicController는 기본적으로 위의 정보를 model에 담아서 view에 전달.
+- 뷰 템플릿은 이 값을 활용해서 출력할 수 있다.
+- 하지만 오류관련 내부 정보를 고객에게 노출하는 것은 보안상 문제, 고객측 혼란을 야기시킬 수 있음.
+- 후술할 설정으로 어느 정도를 model에 포함할 지 여부를 선택할 수 있다.
+
+### 8.7.2 스프링부트 오류 관련 옵션
+application.properties에 다음을 등록해서 사용하면 된다.
+
+#### 오류 컨트롤러에서 오류 정보를 model에 포함할 지 여부
+```properties
+# 기본값들
+server.error.include-exception=false
+server.error.include-message=never
+server.error.include-stacktrace=never
+server.error.include-binding-errors=never
+```
+- true/false로 조절하는 옵션
+  - `server.error.include-exception=false` : exception 포함 여부
+- never(사용하지 않음)/always(항상)/on_param(파라미터가 있을 때)으로 조절하는 옵션. 보통 never가 기본값
+  - `server.error.include-message=never` : 메시지 포함 여부
+  - `server.error.include-stacktrace=never` : trace 포함 여부
+  - `server.error.include-binding-errors=never` : errors 포함 여부
+- on_param 옵션은 http 요청 시 파라미터에 추가하면 적용됨
+  - 예) `?messaga=&error&trace=`
+
+#### whitelabel 오류페이지, 기본 글로벌 오류페이지 경로
+```properties
+# 오류처리 화면을 찾지 못 했을 경우 스프링 whitelabel 오류 페이지 적용 옵션 (기본 true)
+server.error.whitelabel.enabled=false
+
+# 오류 페이지 경로, 스프링이 자동 등록하는 서블릿 글로벌 오류 페이지 경로, BasicErrorController 오류 컨트롤러 경로에 함께 사용
+server.error.path=/error
+```
+
+### 8.7.3 확장 포인트
+- 예외 공통처리 컨트롤러의 기능 변경
+  - ErrorController 인터페이스를 상속 받아 구현하거나
+  - BasicErrorController를 상속받아서 기능 추가하기
+
+</div>
+</details>
 
 ---
 
