@@ -16,6 +16,10 @@ public class ApiExceptionController {
         if (id.equals("ex")) {
             throw new RuntimeException("잘못된 사용자"); // 예외 발생 -> WAS 까지 전파 후 내부 재요청
         }
+        if (id.equals("bad")) {
+            throw new IllegalStateException("잘못된 입력 값");
+        }
+
         return new MemberDto(id, "hello "+id);
     }
 

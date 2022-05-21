@@ -501,6 +501,83 @@ public class BasicErrorController extends AbstractErrorController {
 </details>
 
 ## 9.3 HandlerExceptionResolver 시작
+<details>
+<summary>접기/펼치기 버튼</summary>
+<div markdown="1">
+
+### 9.3.1 ExceptionResolver란
+```java
+public interface HandlerExceptionResolver {
+	@Nullable
+	ModelAndView resolveException(
+			HttpServletRequest request, HttpServletResponse response, @Nullable Object handler, Exception ex);
+}
+```
+```java
+@Configuration
+public class WebConfig implements WebMvcConfigurer {
+
+    // 생략
+    
+    @Override
+    public void extendHandlerExceptionResolvers(List<HandlerExceptionResolver> resolvers) {
+        resolvers.add(new MyHandlerExceptionResolver());
+    }
+}
+```
+- 핸들러(컨트롤러) 밖으로 던져진 예외를 해결하고, 해결 동작을 새로 정의할 수 있는 방법.
+- 줄여서 ExceptionResolver라고 함. 앞으로 ExceptionResolver로 칭하겠음.
+- 사용법
+  - HandlerExceptionResolver 구현
+    - resolveException(request, response, handler, ex)
+      - handler : 핸들러(컨테이너) 등록 정보
+      - ex : 핸들러에서 발생한 예외
+  - 스프링 빈으로 등록된 `WebMvcConfigurer` 구현체의 `extendHandlerExceptionResolvers` 메서드를 오버라이드하고, 여기서 추가
+
+### 9.3.2 ExceptionResolver의 원리
+- 예외 발생. 이 때 인터셉터의 postHandler는 작동되지 않음.
+- ExceptionResolver가 예외 해결을 시동한다. 여기서 ModelAndView를 어떤 식으로 반환하는 지에 따라 뒤의 동작방식이 약간 바뀜. 이는 후술할 것
+- 인터셉터의 afterCompletion이 작동
+- 앞에서 정상적으로 ModelAndView가 반환된 상황이면, 정상적으로 View를 렌더링
+
+### 9.3.3 ExceptionResolver의 반환 값에 따른 동작 방식
+```java
+@Slf4j
+public class MyHandlerExceptionResolver implements HandlerExceptionResolver {
+    @Override
+    public ModelAndView resolveException(HttpServletRequest request, HttpServletResponse response, Object handler, Exception ex) {
+        
+        try {
+            if (ex instanceof IllegalStateException) {
+                log.info("IllegalArgumentException resolver to 400");
+                response.sendError(HttpServletResponse.SC_BAD_REQUEST, ex.getMessage());
+            }
+            return new ModelAndView();
+        } catch (IOException e) {
+            log.error("resolver ex", e);
+        }
+
+        return null; // null 반환하면 예외가 터진게 계속 WAS까지 날아감
+    }
+}
+```
+- resolverException은 반환타입이 ModelAndView인데, 이 떄 반환값에 따라 DispatcherServlet의 동작 방식이 약간 달라진다.
+  - 빈 ModelAndView 반환 : 뷰를 렌더링하지 않고 정상적으로 서블릿이 리턴
+  - ModelAndView 지정 : 명시적으로 View, Model의 정보 등을 지정해서 반환하면 뷰를 렌더링
+  - null : 다음 ExceptionResolver를 찾아서 실행함. 처리할 수 있는 ExceptionResolver가 존재하지 않으면 예외처리가 되지 않고, 기존에 발생한 예외를 서블릿 밖으로 던짐.
+
+### 9.3.4 ExceptionResolver를 어떻게 써먹을까?
+- 예외 상태 코드 변경
+  - Exception을 response.sendError 호출로 변경해서, 서블릿에서 상태 코드에 따른 오류를 처리하도록 위임
+  - 이후 WAS는 서블릿 오류페이지를 찾아서 내부 재요청, 예를 들면 스프링 부트가 기본으로 설정한 /errors가 재요청됨
+- 뷰 템플릿 처리
+  - ModelAndView에 값을 채워서 예외에 따른 새로운 오류화면을 뷰 렌더링해서 고객에게 제공
+- API 응답 처리
+  - `response.getWriter().println("hello");` 처럼 Http응답 바디에 직접 데이터를 넣어주는 것도 가능.
+    - 여기에 JSON으로 응답하면 API 응답처리를 할 수 있다.
+
+</div>
+</details>
 
 ## 9.4 HandlerExceptionResolver 활용
 
