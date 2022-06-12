@@ -1,5 +1,6 @@
 package hello.exception.api;
 
+import hello.exception.exception.UserException;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
@@ -13,11 +14,16 @@ public class ApiExceptionController {
 
     @GetMapping("/api/members/{id}")
     public MemberDto getMember(@PathVariable("id") String id) {
+        log.info("id = {}",id);
         if (id.equals("ex")) {
             throw new RuntimeException("잘못된 사용자"); // 예외 발생 -> WAS 까지 전파 후 내부 재요청
         }
         if (id.equals("bad")) {
             throw new IllegalStateException("잘못된 입력 값");
+        }
+        if (id.equals("user-ex")) {
+            log.info("사용자오류!!!");
+            throw new UserException("사용자 오류");
         }
 
         return new MemberDto(id, "hello "+id);

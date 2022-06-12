@@ -3,8 +3,9 @@ package hello.exception;
 import hello.exception.filter.LogFilter;
 import hello.exception.interceptor.LogInterceptor;
 import hello.exception.resolver.MyHandlerExceptionResolver;
+import hello.exception.resolver.UserHandlerExceptionResolver;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
-import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.HandlerExceptionResolver;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
@@ -14,6 +15,7 @@ import javax.servlet.DispatcherType;
 import javax.servlet.Filter;
 import java.util.List;
 
+@Slf4j
 @Configuration
 public class WebConfig implements WebMvcConfigurer {
 
@@ -28,6 +30,12 @@ public class WebConfig implements WebMvcConfigurer {
                 );
     }
 
+    @Override
+    public void extendHandlerExceptionResolvers(List<HandlerExceptionResolver> resolvers) {
+        resolvers.add(new MyHandlerExceptionResolver());
+        resolvers.add(new UserHandlerExceptionResolver());
+    }
+
     //@Bean
     public FilterRegistrationBean logFilter() {
         FilterRegistrationBean<Filter> filterFilterRegistrationBean = new FilterRegistrationBean<>();
@@ -38,8 +46,5 @@ public class WebConfig implements WebMvcConfigurer {
         return filterFilterRegistrationBean;
     }
 
-    @Override
-    public void extendHandlerExceptionResolvers(List<HandlerExceptionResolver> resolvers) {
-        resolvers.add(new MyHandlerExceptionResolver());
-    }
+
 }
