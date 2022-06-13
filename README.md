@@ -580,6 +580,73 @@ public class MyHandlerExceptionResolver implements HandlerExceptionResolver {
 </details>
 
 ## 9.4 HandlerExceptionResolver 활용
+<details>
+<summary>접기/펼치기 버튼</summary>
+<div markdown="1">
+
+### 9.4.1 HandlerExceptionResolver 구현체 정의하기
+```java
+@Slf4j
+public class UserHandlerExceptionResolver implements HandlerExceptionResolver {
+
+    private final ObjectMapper objectMapper = new ObjectMapper();
+
+    @Override
+    public ModelAndView resolveException(HttpServletRequest request, HttpServletResponse response, Object handler, Exception ex) {
+        try {
+            if (ex instanceof UserException) {
+                log.info("UserException resolver to 400");
+                String acceptHeader = request.getHeader("accept");
+                response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+
+                if ("application/json".equals(acceptHeader)) {
+                    Map<String, Object> errorResult = new HashMap<>();
+                    errorResult.put("ex", ex.getClass());
+                    errorResult.put("message", ex.getMessage());
+                    String result = objectMapper.writeValueAsString(errorResult);
+
+                    response.setContentType("application/json");
+                    response.setCharacterEncoding("utf-8");
+                    response.getWriter().write(result);
+                    return new ModelAndView();
+                } else {
+                    return new ModelAndView("error/500");
+                }
+            }
+        } catch (IOException e) {
+            log.error("resolver ex", e);
+        }
+        return null;
+    }
+}
+```
+- 특정 예외가 터졌을 때 이를 처리하는 HandlerExceptionResolver 구현체를 생성
+  - accept 헤더에 "application/json"으로 요청이 들어오면 적절한 예외 api를 만들어 응답
+  - accept 헤더에 text/html로 요청이 들어오면 html 에러페이지를 응답하도록 하기
+
+### 9.4.2 HandlerExceptionResolver 등록하기
+```java
+@Configuration
+public class WebConfig implements WebMvcConfigurer {
+
+    // 이하 생략...
+    @Override
+    public void extendHandlerExceptionResolvers(List<HandlerExceptionResolver> resolvers) {
+        resolvers.add(new MyHandlerExceptionResolver());
+        resolvers.add(new UserHandlerExceptionResolver());
+    }
+    
+}
+```
+- Config에서 위와 같은 방식으로 등록
+
+### 9.4.3 HandlerExceptionResolver 구현체 생성 방식의 의의
+- 예외 처리를 별도로 하지 않으면, 서블릿 컨테이너 바깥까지 가서 지저분해짐.
+- 서블릿 컨테이너에서 예외를 정상처리함으로서 예외 처리가 깔끔해짐.
+- 하지만... 이 방식대로면 모든 예외를 처리하는 HandlerResolver를 정의하고 매번 수동으로 처리해줘야하니 귀찮다...!
+
+</div>
+</details>
 
 ## 9.5 스프링이 제공하는 HandlerExceptionResolver1
 
