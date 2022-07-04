@@ -723,7 +723,56 @@ protected ModelAndView applyStatusAndReason(int statusCode, @Nullable String rea
 </div>
 </details>
 
-## 9.7 @ExceptionHandler
+## 9.7 `@ExceptionHandler`
+<details>
+<summary>접기/펼치기 버튼</summary>
+<div markdown="1">
+
+### `@ExceptionHandler` 예외 처리 방법
+- `@ExceptionHandler` 어노테이션을 선언하고, 해당 컨트롤러에서 처리하고 싶은 예외를 지정
+
+### ExceptionHandler 우선 순위
+```java
+    @ExceptionHandler(상위예외.class)
+    public String 상위예외처리(상위예외 e) {...}
+
+    @ExceptionHandler(하위예외.class)
+    public String 하위예외처리(하위예외 e) {...}
+```
+- 항상 자세한 것이 더 우선순위가 높음.
+
+### ExceptionHandler 사용법
+```java
+    @ExceptionHandler(예외1.class, 예외2.class)
+    public String 상위예외처리(예외 e) {...}
+    
+    @ExceptionHandler
+    public String handleUserEx(UserException e) {...}
+```
+- 다양한 예외 동시 적용 가능
+- `@ExceptionHandler`에 예외 생략 가능.
+
+### ExceptionHandler 실행 흐름
+- 컨트롤러에서 예외가 발생하면 디스패처 서블릿까지 전파된다.
+- ExceptionResolver가 작동된다. 가장 우선순위가 높은 ExceptionHandlerExceptionResolver가 먼저 실행됨.
+- `ExceptionHandlerExceptionResolver`는 해당 컨트롤러에서, 해당 예외를 처리할 수 있는 `@ExceptionHandler`가 있는지 확인 
+- 해당하는 `@ExceptionResolver`가 존재하면 우선적으로 실행함.
+- ExceptionResolver에는 `@ResponseBody`를 적용할 수 있음. `@RestController`로 컨트롤러가 구성되어 있다면 자동 적용
+  - HTTP메시지 컨버터가 사용되어, JSON으로 반환됨
+- `@ResponseStatus`를 적용 가능하다.
+
+### ExceptionHandler 인자, 반환
+- [인자](https://docs.spring.io/spring-framework/docs/5.3.21/reference/html/web.html#mvc-ann-exceptionhandler-args)
+- [응답](https://docs.spring.io/spring-framework/docs/5.3.21/reference/html/web.html#mvc-ann-exceptionhandler-return-values)
+
+### ModelAndView 반환
+- html 페이지 반환
+
+### 한계
+- 같은 컨트롤러의 `@ExceptionHandler`만 적용 가능.
+
+</div>
+</details>
 
 ## 9.8 @ControllerAdvice
 
