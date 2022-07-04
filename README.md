@@ -703,6 +703,25 @@ protected ModelAndView applyStatusAndReason(int statusCode, @Nullable String rea
 </details>
 
 ## 9.6 스프링이 제공하는 HandlerExceptionResolver2
+<details>
+<summary>접기/펼치기 버튼</summary>
+<div markdown="1">
+
+### DefaultHandlerExceptionResolver
+```java
+	protected ModelAndView handleTypeMismatch(TypeMismatchException ex,
+			HttpServletRequest request, HttpServletResponse response, @Nullable Object handler) throws IOException {
+
+		response.sendError(HttpServletResponse.SC_BAD_REQUEST);
+		return new ModelAndView();
+	}
+```
+- 스프링 내부적으로 발생하는 스프링 예외를 해결
+  - 타입 불일치(파라미터 바인딩 실패), 미디어타입 콘텐츠 네고시에이션 실패, ...
+  - 스프링이 내부적으로 적절한 상태코드를 생성, sendError함 -> WAS에서 다시 /error을 재 요청
+
+</div>
+</details>
 
 ## 9.7 @ExceptionHandler
 
