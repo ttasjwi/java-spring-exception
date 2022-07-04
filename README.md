@@ -649,6 +649,58 @@ public class WebConfig implements WebMvcConfigurer {
 </details>
 
 ## 9.5 스프링이 제공하는 HandlerExceptionResolver1
+<details>
+<summary>접기/펼치기 버튼</summary>
+<div markdown="1">
+
+### ExceptionResolver 우선순위
+스프링부트는 `HandlerExceptionResolverComposite`에 다음 순서대로 예외를 등록함.
+1. `ExceptionHandlerExceptionResolver` : 우선순위 높다
+2. `ResponseStatusExceptionResolver`
+3. `DefaultHAndlerExceptionResolver` : 우선순위 낮다
+
+### ExceptionHandlerExceptionResolver
+- `@ExceptionHandler` 처리
+
+### ResponseStatusExceptionResolver
+```java
+@ResponseStatus(code = HttpStatus.BAD_REQUEST, reason = "error.bad")
+public class BadRequestException extends RuntimeException {
+
+}
+```
+```java
+throw new ResponseStatusException(HttpStatus.NOT_FOUND, "error.bad", new IllegalArgumentException());
+```
+- `@ResponseStatus`가 달려있는 예외 처리
+    - 예외 클래스에 `@ResponseStatus`를 달아, 해당 예외의 상태코드를 지정할 수 있고, 메시지도 reason을 통해 작성 가능
+- `ResponseStatusException` 예외 처리
+  - 방법 : 새로 ResponseStatusException을 생성하고 상태코드, 메시지 코드, 원인 예외를 집어넣을 수 있다.
+  - 개발자가 직접 변경할 수 없는 예외 클래스에 대해서 처리하는 방법.
+  - 라이브러리의 예외코드, 혹은 동적으로 예외코드/메시지를 다르게 하고 싶은 경우 사용
+  - 이 예외도 거슬러 올라가면 부모로 `NestedRuntimeException` -> `RuntimeException`을 가지고 있다.
+
+### ResponseStatusExceptionResolver 내부
+```java
+protected ModelAndView applyStatusAndReason(int statusCode, @Nullable String reason, HttpServletResponse response)
+        throws IOException {
+
+    // 중략
+    
+    else {
+        String resolvedReason = (this.messageSource != null ?
+                this.messageSource.getMessage(reason, null, reason, LocaleContextHolder.getLocale()) :
+                reason);
+        response.sendError(statusCode, resolvedReason);
+    }
+    return new ModelAndView();
+}
+```
+- 내부적으로 messageSource를 알고 있고, reason 값을 기반으로 메시지 처리도 해준다.
+- sendError를 호출했기 때문에, WAS까지 전파되고, 다시 오류 페이지 `/error`를 내부 재요청
+
+</div>
+</details>
 
 ## 9.6 스프링이 제공하는 HandlerExceptionResolver2
 
