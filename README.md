@@ -774,6 +774,28 @@ protected ModelAndView applyStatusAndReason(int statusCode, @Nullable String rea
 </div>
 </details>
 
-## 9.8 @ControllerAdvice
+## 9.8 `@ControllerAdvice`
+<details>
+<summary>접기/펼치기 버튼</summary>
+<div markdown="1">
+
+### `@ControllerAdvice`
+```java
+@Slf4j
+@RestControllerAdvice
+public class ExControllerAdvice {
+```
+- 대상으로 지정한 컨트롤러에 `@ExceptionHandler`, `@InitBinder` 기능 부여
+  - 대상 지정
+    - 특정 패키지 하위의 컨트롤러 (package)
+    - 특정 어노테이션이 있는 컨트롤러 (annotations)
+    - 클래스 (assignableTypes)
+- `@ControllerAdvice`에 대상을 지정하지 않으면 모든 컨트롤러에 적용(글로벌 적용)
+
+### RestControllerAdvice
+- `@ControllerAdvice` + `@ResponseBody`
+
+</div>
+</details>
 
 ---
